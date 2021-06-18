@@ -10,6 +10,7 @@
 #include <math.h>
 #include <errno.h>
 #include <wait.h>
+#include <time.h>
 
 //mendefinisikan port server
 #define PORT 8080
@@ -30,6 +31,21 @@ struct perm {
     char db[50];
     char status[2];
 };
+
+void createLog(char* name, char *command){
+    FILE *log = fopen("/home/nanda/db.log" , "a");
+    time_t now = time(0);
+    struct tm tstruct = *localtime(&now);
+    int tahun=0,bulan=0,hari=0,jam=0,menit=0,detik=0;
+    tahun = tstruct.tm_year + 1900;
+    bulan = tstruct.tm_mon + 1;
+    hari = tstruct.tm_mday;
+    jam = tstruct.tm_hour;
+    menit = tstruct.tm_min;
+    detik = tstruct.tm_sec;
+    fprintf(log, "%d%02d%02d %02d:%02d:%02d:%s:%s\n",tahun,bulan,hari,jam,menit,detik,name,command);
+    fclose(log);
+}
 
 void createDatabase(char *database){
     char filepath[100];
@@ -507,6 +523,7 @@ int main(int argc, char const *argv[]) {
 
                         if (found) {
                             akses = 1;
+                            createLog(username_now, command3);
                             send(new_socket, use1, strlen(use1), 0);
                             printf("boleh pake database\n");
                         } else {
@@ -519,8 +536,13 @@ int main(int argc, char const *argv[]) {
                         token2 = strtok(NULL, " ");
                         // char dbname[40];
                         sprintf(dbname, "%s", token2);
+                        char fullCommand[200];
+                        sprintf(fullCommand, "%s %s", command3, dbname);
+                       
                         createDatabase(dbname);
                         permission(username_now, dbname, "1");
+
+                        createLog(username_now, fullCommand);
                         send(new_socket, berhasil, strlen(berhasil), 0);
 
                     } else if(strcmp(command3, "CREATE TABLE") == 0) {   
@@ -548,6 +570,9 @@ int main(int argc, char const *argv[]) {
                             }
 
                             createTable(dbname, tablename, col);
+                            char fullCommand[200];
+                            sprintf(fullCommand, "%s %s", command3, tablename);
+                            createLog(username_now, fullCommand);
                             send(new_socket, berhasil, strlen(berhasil), 0);
                         } else {   
                             sprintf(msg, "Database belum ditemukan, Mohon gunakan USE [nama_database]\n");
@@ -561,6 +586,9 @@ int main(int argc, char const *argv[]) {
                         sprintf(dbname, "%s", token2);
                         // printf("ini nama dbnya: %s\n", dbname);
                         dropDatabase(dbname);
+                        char fullCommand[200];
+                        sprintf(fullCommand, "%s %s", command3, dbname);
+                        createLog(username_now, fullCommand);
                         send(new_socket, berhasil, strlen(berhasil), 0);
 
                     } else if(strcmp(command3, "DROP TABLE") == 0) {   
@@ -570,6 +598,9 @@ int main(int argc, char const *argv[]) {
                             sprintf(tablename, "%s", token2);
 
                             dropTable(dbname, tablename);
+                            char fullCommand[200];
+                            sprintf(fullCommand, "%s %s", command3, tablename);
+                            createLog(username_now, fullCommand);
                             send(new_socket, berhasil, strlen(berhasil), 0);                        
                         } else {   
                             sprintf(msg, "Database belum ditemukan, Mohon gunakan USE [nama_database]\n");
@@ -638,6 +669,10 @@ int main(int argc, char const *argv[]) {
                         createDatabase("akun");
                         reg(username, password);
 
+                        char fullCommand[200];
+                        sprintf(fullCommand, "%s %s %s %s %s", command3, username, iden, by, password);
+                        createLog(username_now, fullCommand);
+
                         send(new_socket, creatu_berhasil, strlen(creatu_berhasil), 0);
                         printf("%s\n", creatu_berhasil);
 
@@ -647,6 +682,9 @@ int main(int argc, char const *argv[]) {
                         sprintf(database, "%s", token);
 
                         createDatabase(database);
+                        char fullCommand[200];
+                        sprintf(fullCommand, "%s %s", command3, database);
+                        createLog(username_now, fullCommand);
 
                         send(new_socket, creatu_berhasil, strlen(creatu_berhasil), 0);
                         printf("%s\n", creatu_berhasil);
@@ -666,6 +704,9 @@ int main(int argc, char const *argv[]) {
 
                         createDatabase("akun");
                         if(permission(username, database, "1")){
+                            char fullCommand[200];
+                            sprintf(fullCommand, "%s %s %s %s", command3, database, into, username);
+                            createLog(username_now, fullCommand);
                             send(new_socket, grant_berhasil, strlen(grant_berhasil), 0);
                             printf("%s\n", grant_berhasil);
                         } else {
